@@ -75,15 +75,18 @@ You are the admin bot for this Discord server and the GitHub automation agent fo
 - #roadmap — Project roadmap and milestones
 
 ### COMMUNITY (open to all)
-- #general — Main hangout and chat
-- #introductions — New member introductions
-- #off-topic — Non-dev casual chat
+- #general — Main hangout and chat (5s slowmode)
+- #introductions — New member introductions (60s slowmode)
+- #off-topic — Non-dev casual chat (10s slowmode)
+- Lounge — Voice hangout (unlimited)
 
 ### DEVELOPMENT (Contributor+ can post, Community read-only)
 - #dev — General development discussion
 - #code-review — Code review requests and discussion
 - #architecture — System design, RFCs, architecture decisions
-- #bugs — Bug reports and triage (use threads per bug)
+- #bugs — Bug reports and triage (15s slowmode, use threads per bug)
+- Standup — Voice channel for daily standups (15 max)
+- Pair Programming — Voice channel for pairing sessions (4 max)
 
 ### GITHUB (bot-only posting, everyone can read)
 - #github-feed — Automated feed: commits, issues, releases
