@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify project structure
+        run: |
+          echo "Checking required files..."
+          test -f CLAUDE.md && echo "✓ CLAUDE.md exists" || (echo "✗ CLAUDE.md missing" && exit 1)
+          test -f .gitignore && echo "✓ .gitignore exists" || (echo "✗ .gitignore missing" && exit 1)
+          echo "✓ Project structure valid"
+
+      - name: Check for secrets
+        run: |
+          echo "Scanning for accidentally committed secrets..."
+          if grep -r "DISCORD_TOKEN\|ghp_\|gho_\|sk-\|api_key\|secret_key" --include="*.md" --include="*.json" --include="*.yml" --include="*.yaml" --include="*.js" --include="*.ts" --include="*.py" . 2>/dev/null | grep -v ".gitignore" | grep -v "ci.yml" | grep -v "CLAUDE.md"; then
+            echo "✗ Potential secrets found! Review the files above."
+            exit 1
+          fi
+          echo "✓ No secrets detected"
+
+      - name: Validate YAML files
+        run: |
+          echo "Validating GitHub config files..."
+          for f in $(find .github -name "*.yml" -o -name "*.yaml"); do
+            python3 -c "import yaml; yaml.safe_load(open('$f'))" && echo "✓ $f is valid YAML" || (echo "✗ $f has invalid YAML" && exit 1)
+          done
+          echo "✓ All YAML files valid"
+
+  notify:
+    name: Status
+    needs: validate
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Report result
+        run: |
+          if [ "${{ needs.validate.result }}" = "success" ]; then
+            echo "✅ CI passed — all checks green"
+          else
+            echo "❌ CI failed — review the errors above"
+            exit 1
+          fi
