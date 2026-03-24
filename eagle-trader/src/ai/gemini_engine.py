@@ -8,7 +8,8 @@ import logging
 from dataclasses import dataclass
 from typing import Optional
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 from src.analysis.technical import TechnicalSignals
 from src.utils.config import Config
@@ -71,18 +72,9 @@ class GeminiEngine:
 
     def __init__(self, api_key: str = ""):
         self.api_key = api_key or Config.GEMINI_API_KEY
-        if self.api_key:
-            genai.configure(api_key=self.api_key)
-        self.model = genai.GenerativeModel(
-            model_name=Config.GEMINI_MODEL,
-            system_instruction=SYSTEM_PROMPT,
-            generation_config=genai.GenerationConfig(
-                temperature=0.2,
-                top_p=0.8,
-                response_mime_type="application/json",
-            ),
-        )
-        logger.info(f"Gemini engine initialized with model: {Config.GEMINI_MODEL}")
+        self.client = genai.Client(api_key=self.api_key) if self.api_key else None
+        self.model_name = Config.GEMINI_MODEL
+        logger.info(f"Gemini engine initialized with model: {self.model_name}")
 
     def analyze(
         self,
@@ -99,14 +91,23 @@ class GeminiEngine:
         Returns:
             TradeSignal or None if analysis fails
         """
-        if not self.api_key:
+        if not self.client:
             logger.error("Gemini API key not configured")
             return None
 
         prompt = self._build_prompt(signals, portfolio_context)
 
         try:
-            response = self.model.generate_content(prompt)
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=SYSTEM_PROMPT,
+                    temperature=0.2,
+                    top_p=0.8,
+                    response_mime_type="application/json",
+                ),
+            )
             result = json.loads(response.text)
 
             trade_signal = TradeSignal(

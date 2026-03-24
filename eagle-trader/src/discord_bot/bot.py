@@ -38,11 +38,47 @@ class EagleTradingCog(commands.Cog):
         """Called when the cog is loaded."""
         self.auto_scan.start()
         self.process_queue.start()
+        self.startup_scan.start()
         logger.info("EagleTradingCog loaded")
 
     async def cog_unload(self):
         self.auto_scan.cancel()
         self.process_queue.cancel()
+
+    @tasks.loop(count=1)
+    async def startup_scan(self):
+        """Run one scan on startup and post status to Discord."""
+        await asyncio.sleep(5)  # Wait for channels to be ready
+        self._resolve_channels()
+
+        if self.trading_channel:
+            embed = discord.Embed(
+                title="Eagle Trader Online",
+                description=(
+                    f"AI-powered paper trading engine is live.\n"
+                    f"Scanning every **{Config.ANALYSIS_INTERVAL_MINUTES} minutes**.\n"
+                    f"Watchlist: {', '.join(Config.WATCHLIST)}"
+                ),
+                color=discord.Color.gold(),
+                timestamp=datetime.now(),
+            )
+            portfolio = self.orchestrator.trading.get_portfolio_summary()
+            embed.add_field(name="Portfolio", value=f"${portfolio['portfolio_value']:,.2f}", inline=True)
+            embed.add_field(name="Cash", value=f"${portfolio['cash']:,.2f}", inline=True)
+            embed.set_footer(text="Use !portfolio, !analyze, !scan, !watchlist, !trades, !status")
+            await self.trading_channel.send(embed=embed)
+
+        logger.info("Running startup scan...")
+        loop = asyncio.get_event_loop()
+        summary = await loop.run_in_executor(None, self.orchestrator.run_scan)
+
+        if self.trading_channel:
+            embed = self._build_scan_embed(summary)
+            await self.trading_channel.send(embed=embed)
+
+    @startup_scan.before_loop
+    async def before_startup_scan(self):
+        await self.bot.wait_until_ready()
 
     def _resolve_channels(self):
         """Find trading and alerts channels by ID or name."""
@@ -109,10 +145,11 @@ class EagleTradingCog(commands.Cog):
         market_close = close_h * 60 + close_m
 
         # Only scan during market hours (weekdays)
-        if now.weekday() >= 5:  # Saturday/Sunday
-            return
-        if current_time < market_open or current_time > market_close:
-            return
+        # NOTE: Uncomment these lines to restrict to market hours only
+        # if now.weekday() >= 5:  # Saturday/Sunday
+        #     return
+        # if current_time < market_open or current_time > market_close:
+        #     return
 
         logger.info("Auto-scan triggered")
         # Run scan in executor to avoid blocking the event loop

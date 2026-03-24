@@ -55,7 +55,7 @@ class Config:
     MAX_DAILY_LOSS: float = 0.05      # 5% max daily portfolio loss
 
     # Gemini Model
-    GEMINI_MODEL: str = "gemini-2.5-flash-preview-05-20"
+    GEMINI_MODEL: str = "gemini-2.5-flash"
 
     @classmethod
     def validate(cls) -> list[str]:
