@@ -1,0 +1,25 @@
+# Eagle Trader - AI-Powered Paper Trading Bot
+# Eagle Development Group
+
+# Market Data
+yfinance>=0.2.36
+
+# Technical Analysis
+pandas>=2.1.0
+numpy>=1.24.0
+ta>=0.11.0
+
+# AI Engine
+google-generativeai>=0.8.0
+
+# Discord Bot
+discord.py>=2.3.0
+
+# Scheduling
+schedule>=1.2.0
+
+# Environment
+python-dotenv>=1.0.0
+
+# Async
+aiohttp>=3.9.0
