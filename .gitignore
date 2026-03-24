@@ -5,6 +5,20 @@
 # Node
 node_modules/
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Eagle Trader data
+eagle-trader/data/
+*.log
+
 # OS
 Thumbs.db
 Desktop.ini
