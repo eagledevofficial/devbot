@@ -144,21 +144,24 @@ class EagleTradingCog(commands.Cog):
         market_open = open_h * 60 + open_m
         market_close = close_h * 60 + close_m
 
-        # Only scan during market hours (weekdays)
-        # NOTE: Uncomment these lines to restrict to market hours only
-        # if now.weekday() >= 5:  # Saturday/Sunday
-        #     return
-        # if current_time < market_open or current_time > market_close:
-        #     return
+        # Bot runs 24/7 but only actively trades during market hours
+        is_weekend = now.weekday() >= 5
+        is_market_hours = market_open <= current_time <= market_close
+
+        if is_weekend or not is_market_hours:
+            # Outside market hours — just log that we're alive, no scan
+            if current_time % 60 == 0:  # Log once per hour
+                logger.info("Waiting for market open... (bot is running)")
+            return
 
         logger.info("Auto-scan triggered")
         # Run scan in executor to avoid blocking the event loop
         loop = asyncio.get_event_loop()
         summary = await loop.run_in_executor(None, self.orchestrator.run_scan)
 
-        # Post scan summary
+        # Post scan summary — always post during market hours so you can track
         self._resolve_channels()
-        if self.trading_channel and summary.get("trades_executed", 0) > 0:
+        if self.trading_channel:
             embed = self._build_scan_embed(summary)
             await self.trading_channel.send(embed=embed)
 
